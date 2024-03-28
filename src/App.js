@@ -55,7 +55,7 @@ function App() {
 
   // HANDLE COMPLETE BUTTON
   const handleComplete = (index)=>{
-    let all_todo_list = [... allTodos]
+    let all_todo_list = [...allTodos]
     let completed_todo = all_todo_list[index]
     let new_todo_list = all_todo_list.filter((item, i)=> i!==index)
 
