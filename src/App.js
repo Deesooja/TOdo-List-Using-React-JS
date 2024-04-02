@@ -8,6 +8,8 @@ function App() {
   const [NewDescription, setNewDescription] = useState("");
   const [allTodos, setTodos] = useState([]);
   const [allCompletedTodos, setallCompletedTodos] = useState([]);
+  const [isUpdateCall, setIsUpdateCall] = useState(false);
+  const [updateIndex, setupdateIndex] = useState(null);
 
   const handleAddTodo = () => {
     let newTodoItem = {
@@ -23,6 +25,26 @@ function App() {
     setNewDescription("");
   };
 
+  // HANDLE UPDATE TODO LIST
+  const handleUpdateTodo = () => {
+    console.log("updateIndex", updateIndex);
+    let all_todo_list = [...allTodos];
+    let updated_todo_object = {
+      title: NewTitle,
+      description: NewDescription,
+    };
+    console.log("updated_todo_object", updated_todo_object)
+    let new_all_todo_list = all_todo_list.map((item, i) => i === updateIndex ? updated_todo_object : item);
+    // let new_all_todo_list = all_todo_list.filter((item, i)=> i === updateIndex ? updated_todo_object :  item)
+    console.log(new_all_todo_list)
+    setTodos(new_all_todo_list);
+    localStorage.setItem('todolist', JSON.stringify(new_all_todo_list))
+    setNewTitle("");
+    setNewDescription("");
+    setIsUpdateCall(false);
+    setupdateIndex(null);
+  };
+
   useEffect(() => {
     let saveTodo = JSON.parse(localStorage.getItem("todolist"));
     let saveCompletedTodo = JSON.parse(localStorage.getItem("completedTodos"));
@@ -32,7 +54,7 @@ function App() {
     }
 
     if (saveCompletedTodo) {
-      setallCompletedTodos(saveCompletedTodo)
+      setallCompletedTodos(saveCompletedTodo);
     }
   }, []);
 
@@ -45,31 +67,48 @@ function App() {
   };
 
   // FOR COMPLETED TODO LIST
-  const HandleCompletedDeleteBtn = (index)=>{
-    let all_completed_todo_list = [...allCompletedTodos]
-    let new_all_completed_todo_list = all_completed_todo_list.filter((item,i)=> i !== index)
-    setallCompletedTodos(new_all_completed_todo_list)
-    localStorage.setItem('completedTodos', JSON.stringify(new_all_completed_todo_list))
-  }
+  const HandleCompletedDeleteBtn = (index) => {
+    let all_completed_todo_list = [...allCompletedTodos];
+    let new_all_completed_todo_list = all_completed_todo_list.filter(
+      (item, i) => i !== index
+    );
+    setallCompletedTodos(new_all_completed_todo_list);
+    localStorage.setItem(
+      "completedTodos",
+      JSON.stringify(new_all_completed_todo_list)
+    );
+  };
 
+  // HANDLE EDIT BUTTON
+  const handleEdit = (index) => {
+    let all_todo_list = [...allTodos];
+    let todo_object = all_todo_list[index];
+    setNewTitle(todo_object.title);
+    setNewDescription(todo_object.description);
+    setIsUpdateCall(true);
+    setupdateIndex(index);
+  };
 
   // HANDLE COMPLETE BUTTON
-  const handleComplete = (index)=>{
-    let all_todo_list = [...allTodos]
-    let completed_todo = all_todo_list[index]
-    let new_todo_list = all_todo_list.filter((item, i)=> i!==index)
+  const handleComplete = (index) => {
+    let all_todo_list = [...allTodos];
+    let completed_todo = all_todo_list[index];
+    let new_todo_list = all_todo_list.filter((item, i) => i !== index);
 
     // TODO SECTION
-    setTodos(new_todo_list)
-    localStorage.setItem('todolist', JSON.stringify(new_todo_list))
+    setTodos(new_todo_list);
+    localStorage.setItem("todolist", JSON.stringify(new_todo_list));
 
     // COMPLETED SECTION
-    completed_todo["CompletedOn"] = DatetimeNow()
-    let all_completed_todo_list = [...allCompletedTodos]
-    all_completed_todo_list.push(completed_todo)
-    setallCompletedTodos(all_completed_todo_list)
-    localStorage.setItem('completedTodos', JSON.stringify(all_completed_todo_list))
-  }
+    completed_todo["CompletedOn"] = DatetimeNow();
+    let all_completed_todo_list = [...allCompletedTodos];
+    all_completed_todo_list.push(completed_todo);
+    setallCompletedTodos(all_completed_todo_list);
+    localStorage.setItem(
+      "completedTodos",
+      JSON.stringify(all_completed_todo_list)
+    );
+  };
 
   const DatetimeNow = () => {
     let now = new Date();
@@ -82,9 +121,10 @@ function App() {
 
     let completedOn =
       dd + "-" + mm + "-" + yyyy + " at " + h + ":" + m + ":" + s;
-      return completedOn
+    return completedOn;
   };
 
+  // TODO SCREEN COMPONENT
   const TodoScreen = () => {
     return allTodos.map((item, index) => {
       return (
@@ -95,18 +135,31 @@ function App() {
           </div>
           <div className="btn_div">
             <button
+              className="utility_btn edit"
+              onClick={() => handleEdit(index)}
+            >
+              Edit
+            </button>
+
+            <button
+              className="utility_btn complete"
+              onClick={() => handleComplete(index)}
+            >
+              Completed
+            </button>
+            <button
               className="utility_btn delete"
               onClick={() => HandleDeleteBtn(index)}
             >
               Delete
             </button>
-            <button className="utility_btn complete" onClick={()=> handleComplete(index)}>Completed</button>
           </div>
         </div>
       );
     });
   };
 
+  // COMPLETED TODO SCREEN COMPONENT
   const CompletedScreen = () => {
     return allCompletedTodos.map((item, index) => {
       return (
@@ -114,7 +167,9 @@ function App() {
           <div>
             <h3>{item.title}</h3>
             <p>{item.description}</p>
-            <p><small>Completed on: {item.CompletedOn}</small></p>
+            <p>
+              <small>Completed on: {item.CompletedOn}</small>
+            </p>
           </div>
           <div className="btn_div">
             <button
@@ -155,13 +210,23 @@ function App() {
           </div>
 
           <div className="todo-input-item">
-            <button
-              type="button"
-              className="primaryBtn"
-              onClick={handleAddTodo}
-            >
-              Add
-            </button>
+            {isUpdateCall ? (
+              <button
+                type="button"
+                className="primaryBtn"
+                onClick={handleUpdateTodo}
+              >
+                Update
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="primaryBtn"
+                onClick={handleAddTodo}
+              >
+                Add
+              </button>
+            )}
           </div>
         </div>
 
